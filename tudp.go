@@ -16,6 +16,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"net"
 	"os"
@@ -23,8 +24,19 @@ import (
 )
 
 func main() {
+	remote := flag.String("r", "127.0.0.1:3333", "Remote udp address")
+	msg := flag.String("m", "Hello GiterLab!", "Udp message.")
+	enter := flag.Bool("n", false, "Send message end with \\n.")
+	timeout := flag.Int("t", 0, "Setup udp timeout.")
+	flag.Parse()
+
+	fmt.Printf("Send message: \"%s\" to %s\n", *msg, *remote)
+	if *enter {
+		*msg = *msg + "\n"
+	}
+
 	// Create a udp socket
-	raddr, err := net.ResolveUDPAddr("udp4", "127.0.0.1:3333")
+	raddr, err := net.ResolveUDPAddr("udp4", *remote)
 	if err != nil {
 		fmt.Println("Resolve UDP Address failed:", err.Error())
 		os.Exit(0)
@@ -36,13 +48,20 @@ func main() {
 	defer socket.Close()
 
 	// Set options
-	t := time.Now().Add(time.Second * time.Duration(3)) // default is 3s timeout
-	socket.SetWriteDeadline(t)
-	t = time.Now().Add(time.Second * time.Duration(5))
-	socket.SetReadDeadline(t)
+	if *timeout == 0 {
+		t := time.Now().Add(time.Second * time.Duration(1)) // default is 1s timeout: send
+		socket.SetWriteDeadline(t)
+		t = time.Now().Add(time.Second * time.Duration(2)) // default is 2s timeout: recv
+		socket.SetReadDeadline(t)
+	} else {
+		t := time.Now().Add(time.Second * time.Duration(*timeout)) // default is 1s timeout: send
+		socket.SetWriteDeadline(t)
+		socket.SetReadDeadline(t)
+	}
 
 	// Send data
-	send_data := []byte("716017B69950ABC28178E19156B4EDB7:0D")
+	// "716017B69950ABC28178E19156B4EDB7:0D"
+	send_data := []byte(*msg)
 	_, err = socket.Write(send_data)
 	if err != nil {
 		fmt.Println("Send udp data failed:", err.Error())
