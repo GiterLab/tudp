@@ -28,9 +28,14 @@ func main() {
 	msg := flag.String("m", "Hello GiterLab!", "Udp message.")
 	enter := flag.Bool("n", false, "Send message end with \\n.")
 	timeout := flag.Int("t", 0, "Setup udp timeout.")
+	debug_mode := flag.Bool("d", false, "Open debug mode.")
 	flag.Parse()
+	debug := *debug_mode
 
-	fmt.Printf("Send message: \"%s\" to %s\n", *msg, *remote)
+	if debug {
+		fmt.Printf("Send message: \"%s\" to %s\n", *msg, *remote)
+	}
+
 	if *enter {
 		*msg = *msg + "\n"
 	}
@@ -38,12 +43,16 @@ func main() {
 	// Create a udp socket
 	raddr, err := net.ResolveUDPAddr("udp4", *remote)
 	if err != nil {
-		fmt.Println("Resolve UDP Address failed:", err.Error())
+		if debug {
+			fmt.Println("Resolve UDP Address failed:", err.Error())
+		}
 		os.Exit(0)
 	}
 	socket, err := net.DialUDP("udp4", nil, raddr)
 	if err != nil {
-		fmt.Println("Create udp socket failed:", err.Error())
+		if debug {
+			fmt.Println("Create udp socket failed:", err.Error())
+		}
 	}
 	defer socket.Close()
 
@@ -64,7 +73,9 @@ func main() {
 	send_data := []byte(*msg)
 	_, err = socket.Write(send_data)
 	if err != nil {
-		fmt.Println("Send udp data failed:", err.Error())
+		if debug {
+			fmt.Println("Send udp data failed:", err.Error())
+		}
 		os.Exit(0)
 	}
 
@@ -72,9 +83,13 @@ func main() {
 	recv_data := make([]byte, 4096)
 	n, raddr, err := socket.ReadFromUDP(recv_data)
 	if err != nil {
-		fmt.Println("Recv data failed:", err.Error())
+		if debug {
+			fmt.Println("Recv data failed:", err.Error())
+		}
 		os.Exit(0)
 	}
-	fmt.Printf("Recv: % X\n", recv_data[:n])
-	fmt.Println("[ToStrings] -->", string(recv_data[:n]))
+	if debug {
+		fmt.Printf("Recv: % X\n", recv_data[:n])
+		fmt.Println("[ToStrings] -->", string(recv_data[:n]))
+	}
 }
